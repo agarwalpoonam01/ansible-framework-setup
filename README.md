@@ -1,4 +1,4 @@
-Ansible Framwork for Assessment App setup 
+Ansible Framwork for App setup
 =========
 
 This Ansible role is an attempt to solve these requirements:
