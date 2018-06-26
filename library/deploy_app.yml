@@ -1,0 +1,8 @@
+---
+- hosts: all
+  sudo: yes
+  roles:
+    - role: add_security_message
+    - role: firewall_security
+    - role: service_high_available
+    - role: deploy_app

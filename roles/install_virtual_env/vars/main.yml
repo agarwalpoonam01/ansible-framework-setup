@@ -1,0 +1,7 @@
+pyenv_root: ~/.pyenv
+pyenv_project_root: '~'
+pyenv_runcom: ~/.bashrc
+pyenv_versions: [2.7.6]
+pyenv_default_versions: [2.7.10]
+pyenv_project_versions: [2.7.10]
+pyenv_virtualenv: true

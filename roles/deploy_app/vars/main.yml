@@ -1,0 +1,14 @@
+__git: git
+__python_dev: python-dev
+__python_apt: python-apt
+__python_setuptools: python-setuptools
+__python_pip: python-pip
+__nginx: nginx
+__virtualenv: virtualenv
+user_name: vagrant
+user_group: vagrant
+config_dir: /etc/helloworld_springer_app/
+project_dir: /usr/local/src/pe_springer_nature_assessment_app/
+repo: https://bitbucket.org/springersbm/pe_springer_nature_assessment_app.git
+nginx_demon: nginx
+nginx_conf_dir: /etc/nginx

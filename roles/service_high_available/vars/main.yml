@@ -1,0 +1,11 @@
+__python_flask: python-flask
+__redis_package: redis-server
+__python_dev: python-dev
+__python_apt: python-apt
+__python_setuptools: python-setuptools
+__python_pip: python-pip
+redis_daemon: redis-server
+redis_conf_path: /etc/redis/redis.conf
+service_dir: /usr/local/src/service/
+user_name: vagrant
+user_group: vagrant

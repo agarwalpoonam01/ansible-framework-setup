@@ -1,0 +1,36 @@
+---
+- name: Install iptables
+  apt:
+    name: 'iptables'
+    state: 'present'
+
+- name: Create /var/lib/iptables directory
+  file:
+    path: '{{ rules_dir }}'
+    state: 'directory'
+
+- name: Generate iptables config
+  template:
+    src: 'rules-save.j2'
+    dest: '{{ rules_dir }}/rules-save.rules'
+    owner: 'root'
+    group: 'root'
+    mode: '0600'
+  register: iptables_register_config
+
+- name: Copy iptable-update file to be executed on network restart
+  copy:
+    src: 'iptables-update'
+    dest: '/etc/network/if-pre-up.d/iptable-update'
+    owner: 'root'
+    group: 'root'
+    mode: '0755'
+  register: iptables_register_unit
+
+- name: start service
+  shell: sudo ifdown eth1 && sudo ifup eth1
+  when: iptables_register_unit | changed
+
+- name: start service
+  shell: sudo ifdown eth0 && sudo ifup eth0
+  when: iptables_register_unit | changed

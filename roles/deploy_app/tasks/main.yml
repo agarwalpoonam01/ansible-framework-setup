@@ -1,0 +1,91 @@
+---
+- name: Define packages.
+  set_fact:
+    git: "{{ __git }}"
+    python_dev: "{{ __python_dev }}"
+    python_apt: "{{ __python_apt }}"
+    python_setuptools: "{{ __python_setuptools }}"
+    python_pip: "{{ __python_pip }}"
+    nginx: "{{ __nginx }}"
+    virtualenv: "{{ __virtualenv }}"
+  when: (git is not defined) or (python_dev is not defined) or (python_apt is not defined) or (python_setuptools is not defined) or (python_pip is not defined)
+
+- name: install apt-packages
+  apt: name={{ item }} state=present
+  with_items:
+    - "{{ git }}"
+    - "{{ python_dev }}"
+    - "{{ python_apt }}"
+    - "{{ python_setuptools }}"
+    - "{{ python_pip }}"
+    - "{{ nginx }}"
+  sudo: yes
+
+- name: Ensures project dir exists
+  file: path="{{ project_dir }}" state=directory mode=0777
+
+- name: install virtualenv
+  pip: name=virtualenv
+
+- pip: name={{ item }} virtualenv="/usr/local/python-venv" virtualenv_python=python2.7
+  with_items:
+    - requests==2.9.1
+    - pyyaml==3.11
+    - CherryPy==4.0.0
+    - setuptools==30.1.0
+    - six==1.9
+
+- name: set ansible_python_interpreter
+  set_fact: ansible_python_interpreter="/usr/local/python-venv/bin/python"
+
+- name: App | Cloning repo
+  git: 
+    repo: "{{ repo }}"
+    dest: "{{ project_dir }}"
+    version: master
+    force: yes
+    accept_hostkey: yes
+
+- name: Ensures config dir exists
+  file: path="{{ config_dir }}" state=directory
+
+- name: Copy configuration for App
+  copy:
+    src: config.yml
+    dest: "{{ config_dir }}/config.yml"
+    owner: "{{ user_name }}"
+    group: "{{ user_group }}"
+    mode: 0644
+
+- name: Run the setup test command
+  command: /usr/local/python-venv/bin/python setup.py test
+  args:
+    chdir: "{{ project_dir }}"
+
+- name: Run the setup command
+  command: /usr/local/python-venv/bin/python setup.py sdist
+  args:
+    chdir: "{{ project_dir }}"
+
+- shell: ls "{{ project_dir }}/dist/"   
+  register: pip_installable
+
+- pip:
+    name: "{{ project_dir }}/dist/{{ pip_installable.stdout }}"
+
+- name: Start the App
+  shell: "nohup helloworld_springer_app &"
+
+- copy:
+    src: nginx.conf
+    dest: "{{ nginx_conf_dir }}/nginx.conf"
+    owner: "{{ user_name }}"
+    group: "{{ user_group }}"
+    mode: 0644
+  notify:
+    - restart nginx
+
+- name: Be sure nginx is running and enabled
+  service: name=nginx state=started enabled=yes
+
+

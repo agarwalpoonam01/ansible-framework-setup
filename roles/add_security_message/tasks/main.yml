@@ -1,0 +1,63 @@
+---
+# After Login Message
+- stat: path="/etc/motd"
+  register: st
+
+- name: "Create file if doesn't exists"
+  copy: >
+    content=""
+    dest="/etc/motd"
+    owner="root"
+    group="root"
+    mode="0600"
+  when: not st.stat.exists
+
+- name: Add Message to motd file to be shown after login.
+  lineinfile: >
+    path=/etc/motd
+    line="{{ item }}"
+    regexp='{{ item }}'
+    create=yes
+  with_items:
+    - "#Access#"
+    - "Welcome to the Springer Nature network."
+    - "Unauthorised access strictly prohibited."
+    - "#Prohibited#"
+
+# Before Login Message
+- stat: path="/etc/issue.net"
+  register: st
+
+- name: "Create file if doesn't exists"
+  copy: >
+    content=""
+    dest="/etc/issue.net"
+    owner="root"
+    group="root"
+    mode="0600"
+  when: not st.stat.exists
+
+- name: Add Message to motd file to be shown before login.
+  lineinfile: >
+    path=/etc/issue.net
+    line="{{ item }}"
+    regexp='{{ item }}'
+    create=yes
+  with_items:
+    - "#Access#"
+    - "Welcome to the Springer Nature network."
+    - "Unauthorised access strictly prohibited."
+    - "#Prohibited#"
+
+- name: Enable the Banner to be executed on ssh restart
+  lineinfile: >
+    path=/etc/ssh/sshd_config
+    line="{{ item }}"
+    regexp='^{{ item }}'
+    create=yes
+  with_items:
+    - "Banner /etc/issue.net"
+
+- name: start ssh service
+  shell: sudo /etc/init.d/ssh restart
+  become_user: root

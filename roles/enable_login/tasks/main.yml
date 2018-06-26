@@ -1,0 +1,22 @@
+---
+- name: Creates .ssh directory
+  file: path=/home/{{ user_name }}/.ssh state=directory owner={{ user_name }} group={{ user_name }} mode=700
+
+- stat: path="/home/{{ user_name }}/.ssh/authorized_keys"
+  register: st
+
+- name: "Setup key based ssh login"
+  copy: >
+    content=""
+    dest="/home/{{ user_name }}/.ssh/authorized_keys"
+    owner="{{ user_name }}"
+    group="{{ user_name }}"
+    mode="0600"
+  when: not st.stat.exists
+
+- set_fact: 
+    contents: "{{ lookup('file', 'authorized_keys') }}"
+
+- lineinfile:
+    path: "/home/{{ user_name }}/.ssh/authorized_keys"
+    line: "{{ contents }}"

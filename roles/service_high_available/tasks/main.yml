@@ -1,0 +1,93 @@
+---
+- name: Define Required packages.
+  set_fact:
+    redis_package: "{{ __redis_package }}"
+    python_dev: "{{ __python_dev }}"
+    python_apt: "{{ __python_apt }}"
+    python_setuptools: "{{ __python_setuptools }}"
+    python_pip: "{{ __python_pip }}"
+    python_flask: "{{ __python_flask }}"
+  when: (redis_package is not defined) or (python_flask is not defined)
+
+- name: install packages
+  apt: name="{{ item }}" update_cache=yes state=present
+  with_items:
+    - "{{ python_dev }}"
+    - "{{ python_apt }}"
+    - "{{ python_setuptools }}"
+    - "{{ python_pip }}"
+    - "{{ redis_package }}"
+    - "{{ python_flask  }}"
+  sudo: yes
+
+- pip: name={{ item }}
+  with_items:
+    - redis
+
+- name: Ensures dir exists
+  file: path="{{ service_dir }}" state=directory
+
+- name: Ensure Redis is configured.
+  template:
+    src: redis.conf.j2
+    dest: "{{ redis_conf_path }}"
+    mode: 0644
+  notify: restart redis
+
+- name: Ensure Redis is running and enabled on boot.
+  service: name="{{ redis_daemon }}" state=started enabled=yes
+
+- name: Copy configuration for service.
+  copy:
+    src: config.json
+    dest: "{{ service_dir }}/config.json"
+    owner: "{{ user_name }}"
+    group: "{{ user_group }}"
+    mode: 0644
+
+- name: Copy the Service
+  copy:
+    src: high_availability.py
+    dest: "{{ service_dir }}/high_availability.py"
+    owner: "{{ user_name }}"
+    group: "{{ user_group }}"
+    mode: 0644
+
+- name: Check if the service is running
+  shell: ps aux | grep high_availability | grep -v grep
+  ignore_errors: yes
+  changed_when: false
+  register: service_high_availability_status
+
+- name: Start the service if its not running already otherwise skip
+  shell: "nohup python high_availability.py &"
+  args:
+    chdir: "{{ service_dir }}"
+  when: service_high_availability_status.rc != 0
+
+- stat: path="/var/log/high_availability.log"
+  register: st
+
+- name: "Create log file if not present"
+  copy: >
+    content=""
+    dest="/var/log/high_availability.log"
+    owner="{{ user_name }}"
+    group="{{ user_name }}"
+    mode="0666"
+  when: not st.stat.exists
+
+- name: Run a curl command to store data for the first hit errors can be ignored.
+  command: curl --get http://127.0.0.1:8081/ > /var/log/high_availability.log
+  ignore_errors: yes
+
+- cron:
+    name: "run every hour"
+    minute: "0"
+    hour: "*/1"
+    user: root
+    job: "curl --get http://127.0.0.1:8081/ > /var/log/high_availability.log"
+    cron_file: ansible_cron
+
+
+

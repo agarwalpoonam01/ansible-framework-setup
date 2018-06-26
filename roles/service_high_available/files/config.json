@@ -1,0 +1,5 @@
+{
+	"date_endpoint": "http://sleepy-thicket-8107.herokuapp.com/date",
+	"timeout_conn": "5.0",
+	"timeout_read": "20"
+}
